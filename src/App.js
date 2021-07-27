@@ -12,7 +12,10 @@ function App() {
     isSignedIn: false,
     name: '',
     email: '',
-    photo:''
+    password: '',
+    photo:'',
+    error: '',
+    success: false
   });
 
   const handleSignIn = () =>{
@@ -48,6 +51,43 @@ function App() {
     });
   }
 
+  const handleSubmit = (e) =>{
+    firebase.auth().createUserWithEmailAndPassword(user.email, user.password)
+  .then((res) => {
+    // Signed in
+    const newUserInfo = {...user}
+    newUserInfo.error = '';
+    newUserInfo.success = true;
+    setUser(newUserInfo)
+
+    var user = res.user;
+    console.log(res)
+    // ...
+  })
+  .catch((error) => {
+    const newUserInfo ={...user};
+    newUserInfo.error = error.message;
+    newUserInfo.success = false;
+    setUser(newUserInfo)
+  });
+    e.preventDefault();
+  }
+  const handleBlur = (e) =>{
+    let isFormValid = true;
+    if (e.target.name === 'email') {
+      isFormValid = /\S+@\S+\.\S+/.test(e.target.value);
+    }
+    if (e.target.name === 'password') {
+      const isPasswordValid = e.target.value > 6;
+      const passwordHasNumber = /\d{1}/.test(e.target.value);
+      isFormValid = isPasswordValid && passwordHasNumber;
+    }
+    if (isFormValid) {
+      const newUserInfo = {...user};
+      newUserInfo[e.target.name] = e.target.value;
+      setUser(newUserInfo)
+    }
+  }
 
   return (
     <div style={{textAlign: 'center'}}>
@@ -62,7 +102,20 @@ function App() {
           <h4>{user.email}</h4>
         </div>
       }
-
+      <h1>React Authentication</h1>
+      <p>Name: {user.name}</p>
+      <p>Email: {user.email}</p>
+      <p>password: {user.password}</p>
+      <form onSubmit={handleSubmit}>
+        <input type="text" name="name" placeholder="Your Name" onBlur={handleBlur} required/><br />
+        <input type="text" placeholder="Your Email" name="email" onBlur={handleBlur}  required /><br />
+        <input type="password" placeholder="Enter Your Password" name="password" onBlur={handleBlur} required/><br />
+        <input type="submit" value="submit" />
+      </form>
+      <p style={{color: 'red'}}>{user.error}</p>
+      {
+        user.success && <p style = {{color: 'green'}}>User Created Successfully</p>
+      }
     </div>
   );
 }
