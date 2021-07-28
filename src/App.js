@@ -7,7 +7,7 @@ import firebaseConfig from './firebase.config';
 firebase.initializeApp(firebaseConfig);
 
 function App() {
-  const provider = new firebase.auth.GoogleAuthProvider();
+  
 
   const [newUser, setNewUser] = useState(false)
   const [user, setUser] = useState({
@@ -19,9 +19,11 @@ function App() {
     error: '',
     success: false
   });
+  const googleProvider = new firebase.auth.GoogleAuthProvider();
+  const fbProvider = new firebase.auth.FacebookAuthProvider();
 
   const handleSignIn = () =>{
-    firebase.auth().signInWithPopup(provider)
+    firebase.auth().signInWithPopup(googleProvider)
     .then(res => {
       const{displayName, photoURL, email} = res.user;
       const signedInUser = {
@@ -65,6 +67,8 @@ function App() {
         newUserInfo.error = '';
         newUserInfo.success = true;
         setUser(newUserInfo)
+
+        updateUserName(user.name)
         
       })
       .catch((error) => {
@@ -81,6 +85,7 @@ function App() {
         newUserInfo.error = '';
         newUserInfo.success = true;
         setUser(newUserInfo)
+        console.log('sign in user info', res.user)
       })
       .catch((error) => {
         const newUserInfo ={...user};
@@ -109,14 +114,43 @@ function App() {
       setUser(newUserInfo)
     }
   }
-
   
+  const updateUserName = (name) =>{
+    const user = firebase.auth().currentUser;
+
+    user.updateProfile({
+      displayName: name,
+
+    }).then(() => {
+      console.log('user name update successfully')
+    }).catch((error) => {
+      console.log(error)
+    });  
+  }
+  
+  const handleFbSignIn = () =>{
+  firebase
+  .auth()
+  .signInWithPopup(fbProvider)
+  .then((result) => {
+    var user = result.user;
+    console.log(user)
+  })
+  .catch((error) => {
+    var errorMessage = error.message;
+    console.log(errorMessage)
+  });
+  }
   return (
     <div style={{textAlign: 'center'}}>
       {
         user.isSignedIn ? <button onClick={handleSignOut}>Sign out</button>:
         <button onClick={handleSignIn}>Sign In</button>
       }
+      <br />
+
+      <button onClick={handleFbSignIn}>log in with facebook</button>
+
       {
         user.isSignedIn && <div>
           <img src={user.photo} alt="" />
@@ -135,12 +169,13 @@ function App() {
         {newUser && <input type="text" name="name" placeholder="Your Name" onBlur={handleBlur} required/>}<br />
         <input type="text" placeholder="Your Email" name="email" onBlur={handleBlur}  required /><br />
         <input type="password" placeholder="Enter Your Password" name="password" onBlur={handleBlur} required/><br />
-        <input type="submit" value="submit" />
+        <input type="submit" value={newUser ? 'sign up' : 'sign in'} />
       </form>
       <p style={{color: 'red'}}>{user.error}</p>
       {
         user.success && <p style = {{color: 'green'}}>User {newUser ? 'Created': 'Logged In'} Successfully</p>
       }
+      
     </div>
   );
 }
